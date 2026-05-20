@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For Tanvi</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&family=Quicksand:wght@300;400&display=swap');
+
+        /* --- BASE STYLES & BACKGROUND --- */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #050508; /* Very dark night sky */
+            overflow: hidden;
+            font-family: 'Quicksand', sans-serif;
+            color: #ffffff;
+        }
+
+        /* --- THE MOON --- */
+        #moon {
+            position: absolute;
+            top: 50px;
+            right: 10vw;
+            width: 90px;
+            height: 90px;
+            background: #fff8c4; /* Soft, light pale yellow */
+            border-radius: 50%;
+            box-shadow: 
+                0 0 20px 5px rgba(255, 248, 196, 0.8),
+                0 0 60px 20px rgba(255, 252, 224, 0.5),
+                0 0 120px 40px rgba(255, 255, 240, 0.3);
+            z-index: 3;
+        }
+
+        /* --- THE CLOUDS & LIGHTNING --- */
+        #cloud-container {
+            position: absolute;
+            top: -20px;
+            left: 0;
+            width: 100%;
+            height: 250px;
+            z-index: 2;
+            filter: blur(20px);
+            opacity: 0.9;
+        }
+
+        .cloud {
+            position: absolute;
+            background: #111115;
+            border-radius: 50%;
+            transition: background 0.1s ease-out, box-shadow 0.1s ease-out; 
+        }
+
+        .cloud.flash {
+            background: #666677; 
+            box-shadow: 0 0 60px 30px rgba(255, 255, 255, 0.8); 
+        }
+
+        /* --- THE RAIN --- */
+        #rainCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        /* --- MAIN LAYOUT & UI --- */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            padding: 50px;
+            box-sizing: border-box;
+            align-items: center;
+        }
+
+        /* Lyrics Styling */
+        .lyrics-container {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.4rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            line-height: 1.6;
+            height: 60%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .lyric-line {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 1s ease, transform 1s ease;
+        }
+
+        .lyric-line.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Center Translucent Box */
+        #center-box {
+            background: rgba(15, 15, 20, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 40px;
+            min-height: 400px;
+            max-height: 70vh; /* Keeps it from going off-screen */
+            overflow-y: auto; /* Allows scrolling for the long message */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: left; 
+        }
+
+        #message-container {
+            width: 100%;
+            max-height: 55vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 8px;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar for the box */
+        #center-box::-webkit-scrollbar {
+            width: 8px;
+        }
+        #center-box::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        #message-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #message-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        #play-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 15px 40px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: auto;
+        }
+
+        #play-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        #message-text {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Blinking cursor for typewriter */
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+            display: none; 
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Environment -->
+    <div id="moon"></div>
+    <div id="cloud-container">
+        <div class="cloud" style="width: 300px; height: 150px; top: -50px; left: -50px;"></div>
+        <div class="cloud" style="width: 500px; height: 200px; top: -80px; left: 15vw;"></div>
+        <div class="cloud" style="width: 400px; height: 180px; top: -60px; right: 20vw;"></div>
+        <div class="cloud" style="width: 600px; height: 250px; top: -100px; right: -50px;"></div>
+    </div>
+    
+    <canvas id="rainCanvas"></canvas>
+
+    <!-- Background Audio with your GitHub Link -->
+    <audio id="bg-audio" preload="auto">
+        <source src="https://github.com/patilhemanshu987-ship-it/sugarcloudiee/raw/refs/heads/main/Kabhi%20Jo%20Badal%20Barse-Dil%20De%20Diya%20Hai%20(PenduJatt.Com.Se).mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- User Interface -->
+    <div id="ui-layer">
+        
+        <!-- Left Lyrics -->
+        <div class="lyrics-container" id="left-lyrics"></div>
+
+        <!-- Center Message Box -->
+        <div id="center-box">
+            <button id="play-btn">Listen & Read</button>
+            <div id="message-container" style="display: none; width: 100%;">
+                <span id="message-text"></span><span class="cursor" id="cursor"></span>
+            </div>
+        </div>
+
+        <!-- Right Lyrics -->
+        <div class="lyrics-container" id="right-lyrics"></div>
+
+    </div>
+
+    <script>
+        /* =========================================
+           1. SETUP YOUR MESSAGE AND LYRICS HERE
+        ========================================= */
+        
+        const yourMessage = `i'm proud of you TK that whenever you get to hear abt such events your protective instincts turn on , like you got know abt him so yes its obvious you'd think twice before u trust on anyone but honey me ?? ....its okay i am not saying its bad .....what i want to let you know is take it easy okay....ik raja how much afraid you'd be imagining what if i'd do the same but tell me once why would i right....even if i change how would my love for you my care for you change ??? i call you bala naa...and follow myself as ur mum....tell me how could i even dare to change then .....you know i always wish to see u smile and all happy....then why would i even try to change that ??? why would i do smtg that'd do smtg opposite to what i want ??
+and yes i don thave such kinda habits either okay.....trust me upon this ...uk mumma gave up her job so that i js won't get stuck in these kinda bad things....she was worried abt the same that if she ain't gonna hit me or slap me if i ever go wrong then i would turn into such a creep or a dumbass ......
+also i dont mention out such things to you because i try that you remain far away from all this negativity and all .....you remain safe.....its not like i dont let you know these things just when the time comes i'll ofc tell u things and i also do.....
+
+and yes did you forget you also there right to slap me and tell me .....you do have that right na .....that if i ever go wrong then you should come to me and give me a tight slap or just start hitting me with anything you find .....when i say u mumma na all this comes with that.....as you're with me u care abt me then yes you also get the right to tell me things right guide me....
+
+and yes i give you my word i'll never allow you chances to complain abt me for such a thing ....if you ever get to complain then it'd be a silly thing .....and 
+talking abt your dream world .....yes its very sweet its so pure and i wish to bring it true either so that rather than just imagining you can live into it....and yes also i don't like telling out things i do for you....whatever i do from that you must know that i indeed worry abt you and care either....when it comes to you...u know how much warmth i carry....
+and i do just because mala tujhe laadh kryla avadta khup jaast
+
+ek tr itki cute ahes kahi trhi bala sarkha kurgulya karat astes tasach rahat jaa naa around me ....jevha tula garaj asel tevhach motthya sarkhi vaagh ittr veli mala tula sambhalycha ahe .....i admit that now i wish you live out as u want to around me...but this doesn't mean right tu asa tond phugvun basnar and tula zombie kanchana all that i say is to divert yourself....karan hearing that will infuriate you so at least you say it out the frustration on me by speaking it out or beating me and u did it well either......`;
+
+        // Lyrics starting around the 3-minute mark (180 seconds). 
+        // Adjust these times as needed to sync perfectly with the music!
+        const songLyrics = [
+            { time: 180.0, side: 'left', text: "Dil de diya hai" },
+            { time: 184.0, side: 'right', text: "Jaan tumhe denge daga nahi karenge sanam" },
+            { time: 189.0, side: 'left', text: "Kabhi jo badal barse" },
+            { time: 193.0, side: 'right', text: "Main dekhu tujhe aankhe bharke" },
+            { time: 197.0, side: 'left', text: "Tu lage mujhe pehli barish ki duya" },
+            { time: 201.0, side: 'right', text: "Tere pelhon mein reh lu" },
+            { time: 205.0, side: 'left', text: "Main khud ko pagal keh lu" },
+            { time: 209.0, side: 'right', text: "Tu gam de ya khushiyan seh lu saathiya" },
+            { time: 214.0, side: 'left', text: "Paas tum rahoge door ab na hoge" },
+            { time: 218.0, side: 'right', text: "Karunga na tumpe na sitam" },
+            { time: 222.0, side: 'left', text: "Chain mera le lo" },
+            { time: 226.0, side: 'right', text: "Kushi meri le lo" },
+            { time: 230.0, side: 'left', text: "De do mujhe de do saare gam!" }
+        ];
+
+        /* =========================================
+           2. SMOOTH RAIN ENGINE (HTML5 CANVAS)
+        ========================================= */
+        const canvas = document.getElementById('rainCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let rainDrops = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class RainDrop {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * height; 
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = -20;
+                this.length = Math.random() * 15 + 10;
+                this.velocity = Math.random() * 8 + 15;
+                this.opacity = Math.random() * 0.4 + 0.3; 
+            }
+            update() {
+                this.y += this.velocity;
+                this.x += 1; 
+                if (this.y > height) {
+                    this.reset();
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x + 1, this.y + this.length);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.lineWidth = 1.5; 
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        }
+
+        for (let i = 0; i < 200; i++) {
+            rainDrops.push(new RainDrop());
+        }
+
+        function animateRain() {
+            ctx.clearRect(0, 0, width, height);
+            rainDrops.forEach(drop => {
+                drop.update();
+                drop.draw();
+            });
+            requestAnimationFrame(animateRain);
+        }
+        animateRain();
+
+        /* =========================================
+           3. REALISTIC LIGHTNING GENERATOR (CLOUDS ONLY)
+        ========================================= */
+        const clouds = document.querySelectorAll('.cloud');
+
+        function triggerLightning() {
+            clouds.forEach(c => c.classList.add('flash'));
+            setTimeout(() => {
+                clouds.forEach(c => c.classList.remove('flash'));
+                
+                if (Math.random() > 0.4) {
+                    setTimeout(() => {
+                        clouds.forEach(c => c.classList.add('flash'));
+                        setTimeout(() => {
+                            clouds.forEach(c => c.classList.remove('flash'));
+                        }, 40);
+                    }, 50);
+                }
+            }, 40);
+
+            const nextTime = Math.random() * 8000 + 4000;
+            setTimeout(triggerLightning, nextTime);
+        }
+        setTimeout(triggerLightning, 3000);
+
+        /* =========================================
+           4. AUDIO, TYPEWRITER, & LYRICS LOGIC
+        ========================================= */
+        const playBtn = document.getElementById('play-btn');
+        const audio = document.getElementById('bg-audio');
+        const messageContainer = document.getElementById('message-container');
+        const messageText = document.getElementById('message-text');
+        const cursor = document.getElementById('cursor');
+
+        const scrollThreshold = 320;
+        function scrollMessageIntoView() {
+            if (messageText.textContent.length >= scrollThreshold) {
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            }
+        }
+
+        let currentLyricIndex = 0;
+
+        playBtn.addEventListener('click', () => {
+            // Jump exactly to the 3-minute mark (180 seconds)
+            audio.currentTime = 180; 
+            audio.play().catch((error) => {
+                console.warn('Audio playback could not start:', error);
+            });
+            
+            playBtn.style.display = 'none';
+            messageContainer.style.display = 'block';
+            cursor.style.display = 'inline-block';
+
+            let charIndex = 0;
+            function typeWriter() {
+                if (charIndex < yourMessage.length) {
+                    messageText.innerHTML += yourMessage.charAt(charIndex);
+                    charIndex++;
+                    scrollMessageIntoView();
+                    let typeSpeed = Math.random() * 20 + 20; 
+                    setTimeout(typeWriter, typeSpeed);
+                } else {
+                    scrollMessageIntoView();
+                    setTimeout(() => cursor.style.display = 'none', 3000);
+                }
+            }
+            setTimeout(typeWriter, 1000);
+        });
+
+        audio.addEventListener('timeupdate', () => {
+            if (currentLyricIndex < songLyrics.length) {
+                const nextLyric = songLyrics[currentLyricIndex];
+                
+                if (audio.currentTime >= nextLyric.time) {
+                    const targetContainer = document.getElementById(`${nextLyric.side}-lyrics`);
+                    
+                    const p = document.createElement('p');
+                    p.className = 'lyric-line';
+                    p.innerText = nextLyric.text;
+                    
+                    targetContainer.appendChild(p);
+                    
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            p.classList.add('visible');
+                        });
+                    });
+
+                    if (targetContainer.children.length > 3) {
+                        const firstChild = targetContainer.children[0];
+                        firstChild.classList.remove('visible');
+                        setTimeout(() => firstChild.remove(), 1000); 
+                    }
+
+                    currentLyricIndex++;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
